@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业网银模拟系统 - RPA培训专用</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
+        body { background: #f0f2f5; height: 100vh; }
+
+        .warning-banner { background: #ff9800; color: #000; text-align: center; padding: 6px; font-size: 13px; font-weight: bold; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+
+        .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
+        .login-box { width: 420px; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); padding: 40px 35px; margin-top: 30px; }
+        .logo { text-align: center; margin-bottom: 35px; }
+        .logo h1 { color: #1a73e8; font-size: 28px; letter-spacing: 2px; }
+        .logo p { color: #666; font-size: 13px; margin-top: 5px; }
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; font-size: 14px; color: #333; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; }
+        .form-group input:focus { border-color: #1a73e8; outline: none; }
+        .captcha-row { display: flex; gap: 10px; align-items: center; }
+        .captcha-row input { flex: 1; }
+        .captcha-text { background: #f0f0f0; padding: 10px 15px; font-size: 18px; letter-spacing: 4px; font-weight: bold; color: #1a73e8; border-radius: 4px; user-select: none; }
+        .btn { width: 100%; padding: 12px; background: #1a73e8; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .btn:hover { background: #1557b0; }
+        .tip { margin-top: 20px; font-size: 12px; color: #999; text-align: center; }
+        .login-error { color: #d93025; font-size: 13px; margin-top: 10px; text-align: center; min-height: 20px; }
+
+        .main-layout { display: flex; flex-direction: column; height: 100vh; }
+        .header { background: #1a73e8; color: white; padding: 0 20px; height: 50px; display: flex; align-items: center; justify-content: space-between; margin-top: 30px; }
+        .header .logo-text { font-size: 20px; font-weight: bold; letter-spacing: 2px; }
+        .header .user-info { font-size: 13px; }
+        .header .user-info a { color: #e8f0fe; text-decoration: none; margin-left: 10px; }
+        .main-body { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 210px; background: #fff; border-right: 1px solid #e4e7ed; padding-top: 10px; }
+        .sidebar .menu-title { padding: 12px 20px; font-size: 14px; color: #909399; font-weight: bold; border-bottom: 1px solid #f0f0f0; }
+        .sidebar .menu-item { display: block; padding: 12px 20px 12px 25px; font-size: 14px; color: #333; text-decoration: none; border-left: 3px solid transparent; transition: 0.2s; }
+        .sidebar .menu-item:hover { background: #f5f7fa; }
+        .sidebar .menu-item.active { color: #1a73e8; border-left-color: #1a73e8; background: #e8f0fe; font-weight: bold; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        .breadcrumb { font-size: 13px; color: #666; margin-bottom: 20px; }
+        .card { background: white; border-radius: 4px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .form-row { margin-bottom: 18px; display: flex; align-items: center; }
+        .form-row label { width: 90px; font-size: 14px; color: #333; text-align: right; margin-right: 12px; }
+        .form-row input, .form-row select { width: 240px; padding: 8px 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; }
+        .form-row input:focus, .form-row select:focus { border-color: #1a73e8; outline: none; }
+        .btn-main { padding: 10px 25px; background: #1a73e8; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; margin-right: 10px; }
+        .btn-main:hover { background: #1557b0; }
+        .btn-secondary { background: #0d904f; }
+        .btn-secondary:hover { background: #0b7d43; }
+        .table-container { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border: 1px solid #ebeef5; padding: 10px 8px; text-align: left; }
+        th { background: #f5f7fa; color: #333; }
+        .account-tip { background: #f0f9eb; border: 1px solid #e1f3d8; padding: 8px 15px; border-radius: 4px; margin-bottom: 20px; font-size: 13px; color: #0d904f; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="warning-banner">⚠️ 本系统仅供内部RPA培训模拟使用，非真实银行网站，请勿输入任何真实信息</div>
+
+    <!-- 登录视图 -->
+    <div id="loginView" class="login-container" style="padding-top:30px;">
+        <div class="login-box">
+            <div class="logo">
+                <h1>🏦 企业网银模拟系统</h1>
+                <p>RPA 财务机器人培训专用</p>
+            </div>
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" placeholder="请输入用户名" value="admin">
+            </div>
+            <div class="form-group">
+                <label for="password">登录密码</label>
+                <input type="password" id="password" placeholder="请输入密码" value="123456">
+            </div>
+            <div class="form-group">
+                <label for="captchaInput">验证码</label>
+                <div class="captcha-row">
+                    <input type="text" id="captchaInput" placeholder="请输入验证码">
+                    <div class="captcha-text" id="captchaText">A3B9</div>
+                </div>
+            </div>
+            <!-- 错误提示区域 -->
+            <div id="loginError" class="login-error"></div>
+            <button class="btn" id="loginBtn">登 录</button>
+            <div class="tip">演示账号：admin / 123456，验证码见右侧</div>
+        </div>
+    </div>
+
+    <!-- 主界面视图 -->
+    <div id="mainView" class="main-layout hidden">
+        <div class="header">
+            <div class="logo-text">企业网银模拟系统</div>
+            <div class="user-info">
+                欢迎，<b id="showUser">操作员</b> 
+                <a href="#" id="logoutBtn">[退出]</a>
+            </div>
+        </div>
+        <div class="main-body">
+            <div class="sidebar">
+                <div class="menu-title">账户管理</div>
+                <a href="#" class="menu-item active" data-page="transaction">交易明细查询</a>
+                <a href="#" class="menu-item" data-page="balance">账户余额查询</a>
+                <a href="#" class="menu-item" data-page="history">历史回单打印</a>
+                <div class="menu-title" style="margin-top:10px;">转账支付</div>
+                <a href="#" class="menu-item" data-page="transfer">单笔转账</a>
+                <a href="#" class="menu-item" data-page="batch">批量转账</a>
+            </div>
+            <div class="content" id="contentArea"></div>
+        </div>
+    </div>
+
+    <script>
+        // ---------- 视图切换 ----------
+        function showLogin() {
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('mainView').classList.add('hidden');
+            window.location.hash = 'login';
+            document.getElementById('captchaText').innerText = Math.random().toString(36).substring(2,6).toUpperCase();
+            document.getElementById('captchaInput').value = '';
+            document.getElementById('loginError').innerText = '';
+        }
+
+        function showMain(username) {
+            document.getElementById('showUser').innerText = username;
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+            window.location.hash = 'main';
+            if (!document.getElementById('contentArea').innerHTML.trim()) {
+                loadPage('transaction');
+            }
+        }
+
+        function initView() {
+            const hash = window.location.hash;
+            if (hash === '#main') {
+                showMain('操作员');
+            } else {
+                showLogin();
+            }
+        }
+        initView();
+
+        window.addEventListener('hashchange', function() {
+            const hash = window.location.hash;
+            if (hash === '#main' && document.getElementById('mainView').classList.contains('hidden')) {
+                showMain('操作员');
+            } else if ((hash === '#login' || hash === '') && document.getElementById('loginView').classList.contains('hidden')) {
+                showLogin();
+            }
+        });
+
+        // ---------- 登录逻辑（含内联错误提示）----------
+        document.getElementById('loginBtn').addEventListener('click', function(){
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const captcha = document.getElementById('captchaInput').value.trim();
+            const captchaText = document.getElementById('captchaText').innerText.trim();
+            const errorDiv = document.getElementById('loginError');
+            
+            // 清空之前的错误提示
+            errorDiv.innerText = '';
+
+            if(!username || !password || !captcha){
+                errorDiv.innerText = '请完整填写所有字段';
+                return;
+            }
+            if(captcha.toUpperCase() !== captchaText.toUpperCase()){
+                // 验证码错误：显示内联提示并刷新验证码
+                errorDiv.innerText = '验证码错误，请重新输入';
+                document.getElementById('captchaText').innerText = Math.random().toString(36).substring(2,6).toUpperCase();
+                document.getElementById('captchaInput').value = '';
+                return;
+            }
+            if(username !== 'admin' || password !== '123456'){
+                errorDiv.innerText = '用户名或密码错误！(演示账号: admin / 123456)';
+                return;
+            }
+            // 登录成功
+            showMain(username);
+        });
+
+        // 退出
+        document.getElementById('logoutBtn').addEventListener('click', function(e){
+            e.preventDefault();
+            showLogin();
+        });
+
+        // 菜单点击
+        document.querySelector('.sidebar').addEventListener('click', function(e){
+            if(e.target.classList.contains('menu-item')){
+                e.preventDefault();
+                document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+                e.target.classList.add('active');
+                const page = e.target.getAttribute('data-page');
+                loadPage(page);
+            }
+        });
+
+        let currentQueryData = [];
+
+        function loadPage(page) {
+            const contentArea = document.getElementById('contentArea');
+            if(page === 'transaction'){
+                contentArea.innerHTML = `
+                    <div class="breadcrumb">首页 &gt; 账户管理 &gt; 交易明细查询</div>
+                    <div class="card">
+                        <div class="account-tip">
+                            当前默认账号：<b>7559-1234-5678-9012</b>（人民币基本户）&nbsp;&nbsp;|&nbsp;&nbsp;币种：CNY
+                        </div>
+                        <div class="form-row">
+                            <label for="accountSelect">选择账号</label>
+                            <select id="accountSelect">
+                                <option value="7559123456789012" selected>7559-1234-5678-9012 基本户</option>
+                                <option value="7559876543210987">7559-8765-4321-0987 一般户</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label for="queryDate">交易日期</label>
+                            <input type="date" id="queryDate">
+                        </div>
+                        <div class="form-row">
+                            <label></label>
+                            <button class="btn-main" id="queryBtn">查 询</button>
+                            <button class="btn-main btn-secondary hidden" id="downloadBtn">下载 Excel</button>
+                        </div>
+                        <div id="resultTable" class="table-container hidden">
+                            <h4 style="margin-bottom:10px;">交易明细列表（<span id="resultDate"></span>）</h4>
+                            <table>
+                                <thead>
+                                    <tr><th>交易时间</th><th>摘要</th><th>对方账号</th><th>收入金额</th><th>支出金额</th><th>余额</th></tr>
+                                </thead>
+                                <tbody id="tbody"></tbody>
+                            </table>
+                        </div>
+                        <p id="noData" class="hidden" style="color:#e6a23c; margin-top:10px;">该日期暂无交易记录</p>
+                    </div>
+                `;
+                bindTransactionEvents();
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                document.getElementById('queryDate').value = yesterday.toISOString().split('T')[0];
+            } else {
+                const titles = {
+                    'balance': '账户余额查询',
+                    'history': '历史回单打印',
+                    'transfer': '单笔转账',
+                    'batch': '批量转账'
+                };
+                contentArea.innerHTML = `<div class="card"><p style="color:#999;">${titles[page] || ''} 功能（演示版暂未开放）</p></div>`;
+            }
+        }
+
+        function bindTransactionEvents(){
+            document.getElementById('queryBtn').addEventListener('click', function(){
+                const date = document.getElementById('queryDate').value;
+                if(!date) {
+                    alert('请选择查询日期');
+                    return;
+                }
+                const sampleData = [
+                    { time: '09:15:23', summary: '货款支付', opposite: '6222****1234', income: '', expense: '25,600.00', balance: '1,234,500.00' },
+                    { time: '10:30:45', summary: '转账收入', opposite: '6228****5678', income: '50,000.00', expense: '', balance: '1,284,500.00' },
+                    { time: '11:02:11', summary: '工资发放', opposite: '批量代发', income: '', expense: '120,000.00', balance: '1,164,500.00' },
+                    { time: '13:45:33', summary: '报销款', opposite: '6217****9876', income: '3,200.00', expense: '', balance: '1,167,700.00' },
+                    { time: '14:20:09', summary: '服务费', opposite: '6225****3456', income: '', expense: '8,800.00', balance: '1,158,900.00' },
+                    { time: '15:55:17', summary: '退款', opposite: '支付宝(中国)', income: '1,200.00', expense: '', balance: '1,160,100.00' },
+                    { time: '16:40:02', summary: '利息收入', opposite: '系统结息', income: '156.80', expense: '', balance: '1,160,256.80' },
+                    { time: '17:10:44', summary: '电费支出', opposite: '国家电网', income: '', expense: '12,500.00', balance: '1,147,756.80' }
+                ];
+                const count = Math.floor(Math.random() * 4) + 5;
+                const shuffled = sampleData.sort(() => Math.random() - 0.5);
+                currentQueryData = shuffled.slice(0, count).sort((a,b) => a.time.localeCompare(b.time));
+                
+                const tbody = document.getElementById('tbody');
+                tbody.innerHTML = '';
+                currentQueryData.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${row.time}</td><td>${row.summary}</td><td>${row.opposite}</td><td>${row.income}</td><td>${row.expense}</td><td>${row.balance}</td>`;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('resultDate').innerText = date;
+                document.getElementById('resultTable').classList.remove('hidden');
+                document.getElementById('noData').classList.add('hidden');
+                document.getElementById('downloadBtn').classList.remove('hidden');
+            });
+
+            document.getElementById('downloadBtn').addEventListener('click', function(){
+                if(currentQueryData.length === 0) {
+                    alert('没有数据可下载');
+                    return;
+                }
+                const date = document.getElementById('queryDate').value;
+                let htmlContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>交易明细</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1"><tr><th>交易时间</th><th>摘要</th><th>对方账号</th><th>收入金额</th><th>支出金额</th><th>余额</th></tr>`;
+                currentQueryData.forEach(row => {
+                    htmlContent += `<tr><td>${row.time}</td><td>${row.summary}</td><td>${row.opposite}</td><td>${row.income}</td><td>${row.expense}</td><td>${row.balance}</td></tr>`;
+                });
+                htmlContent += `</table></body></html>`;
+                
+                const blob = new Blob(['\uFEFF' + htmlContent], { type: 'application/vnd.ms-excel' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Transaction_${date.replace(/-/g, '')}.xls`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+    </script>
+</body>
+</html>
